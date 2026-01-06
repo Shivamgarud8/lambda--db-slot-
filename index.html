@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student Live Form</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    input { padding: 6px; margin-bottom: 8px; width: 250px; }
+    button { padding: 8px 15px; cursor: pointer; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f2f2f2; }
+  </style>
+</head>
+<body>
+
+<h2>Student Entry Form</h2>
+
+<input id="name" placeholder="Name"><br>
+<input id="email" placeholder="Email"><br>
+<input id="mobile" placeholder="Mobile"><br>
+
+<b>Select Slots:</b><br>
+<label><input type="checkbox" value="Morning"> Morning</label>
+<label><input type="checkbox" value="Evening"> Evening</label>
+<label><input type="checkbox" value="Weekend"> Weekend</label>
+<br><br>
+
+<button onclick="submitData()">Submit</button>
+
+<hr>
+
+<h2>Live Student Data</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Mobile</th>
+      <th>Slots</th>
+    </tr>
+  </thead>
+  <tbody id="students"></tbody>
+</table>
+
+<script>
+const LAMBDA_URL = "https://hnugnadftxgow2oabldmbgta3i0pbmni.lambda-url.eu-north-1.on.aws/";
+
+// Submit student data
+async function submitData() {
+  const slots = [...document.querySelectorAll("input[type=checkbox]:checked")].map(cb => cb.value);
+  try {
+    const res = await fetch(LAMBDA_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: name.value,
+        email: email.value,
+        mobile: mobile.value,
+        slots: slots
+      })
+    });
+    const data = await res.json();
+    if (data.success) alert("Saved successfully!");
+    else alert("Error: " + data.error);
+  } catch (e) {
+    alert("Network Error: " + e.message);
+  }
+}
+
+// Load student data
+async function loadData() {
+  try {
+    const res = await fetch(LAMBDA_URL);
+    const data = await res.json();
+    if (!Array.isArray(data)) return;
+
+    document.getElementById("students").innerHTML = data.map(s => `
+      <tr>
+        <td>${s.name}</td>
+        <td>${s.email}</td>
+        <td>${s.mobile}</td>
+        <td>${(s.slots || []).join(", ")}</td>
+      </tr>
+    `).join("");
+  } catch (e) {
+    console.error("Load Data Error:", e);
+  }
+}
+
+// Live refresh every second
+setInterval(loadData, 1000);
+loadData();
+</script>
+
+</body>
+</html>
